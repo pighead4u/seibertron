@@ -14,7 +14,7 @@ import com.google.zxing.integration.android.IntentIntegrator
 import com.serendipity.seibertron.dummy.DummyContent
 import com.serendipity.seibertron.http.Response
 import com.serendipity.seibertron.http.RetrofitService
-import com.serendipity.seibertron.model.ISBN
+import com.serendipity.seibertron.model.Book
 import io.reactivex.android.schedulers.AndroidSchedulers
 import io.reactivex.functions.Consumer
 import io.reactivex.schedulers.Schedulers
@@ -57,7 +57,7 @@ class ItemListActivity : AppCompatActivity() {
                     .searchISBN(result.contents)
                     .subscribeOn(Schedulers.io())
                     .observeOn(AndroidSchedulers.mainThread())
-                    .subscribe(Consumer<Response<ISBN>> {
+                    .subscribe(Consumer<Response<Book>> {
                         Toast.makeText(this, "Scanned: $it", Toast.LENGTH_LONG).show()
 
                     }, Consumer<Throwable> {
