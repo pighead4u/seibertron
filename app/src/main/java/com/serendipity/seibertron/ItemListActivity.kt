@@ -2,18 +2,26 @@ package com.serendipity.seibertron
 
 import android.content.Intent
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.snackbar.Snackbar
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-
+import android.widget.Toast
+import androidx.appcompat.app.AppCompatActivity
+import androidx.recyclerview.widget.RecyclerView
+import com.google.zxing.integration.android.IntentIntegrator
 import com.serendipity.seibertron.dummy.DummyContent
+import com.serendipity.seibertron.http.Response
+import com.serendipity.seibertron.http.RetrofitService
+import com.serendipity.seibertron.model.ISBN
+import io.reactivex.android.schedulers.AndroidSchedulers
+import io.reactivex.functions.Consumer
+import io.reactivex.schedulers.Schedulers
 import kotlinx.android.synthetic.main.activity_item_list.*
-import kotlinx.android.synthetic.main.item_list_content.view.*
 import kotlinx.android.synthetic.main.item_list.*
+import kotlinx.android.synthetic.main.item_list_content.view.*
+
 
 /**
  * An activity representing a list of Pings. This activity
@@ -35,11 +43,41 @@ class ItemListActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_item_list)
 
-        setSupportActionBar(toolbar)
-        toolbar.title = title
+        initView()
+        initData()
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        val result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data)
+        if (result != null) {
+            if (result.contents == null) {
+                Toast.makeText(this, "Cancelled", Toast.LENGTH_LONG).show()
+            } else {
+                RetrofitService.service
+                    .searchISBN(result.contents)
+                    .subscribeOn(Schedulers.io())
+                    .observeOn(AndroidSchedulers.mainThread())
+                    .subscribe(Consumer<Response<ISBN>> {
+                        Toast.makeText(this, "Scanned: $it", Toast.LENGTH_LONG).show()
+
+                    }, Consumer<Throwable> {
+                        Log.e("error", it.message)
+                        Toast.makeText(this, "Scanned: $it", Toast.LENGTH_LONG).show()
+
+                    })
+
+            }
+        } else {
+            super.onActivityResult(requestCode, resultCode, data)
+        }
+    }
+
+    private fun initView() {
+//        setSupportActionBar(toolbar)
+//        toolbar.title = title
 
         fab.setOnClickListener { view ->
-            startActivityForResult(Intent(this, CaptureActivity::class.java), 1001)
+            IntentIntegrator(this).initiateScan()
         }
 
         if (item_detail_container != null) {
@@ -51,6 +89,9 @@ class ItemListActivity : AppCompatActivity() {
         }
 
         setupRecyclerView(item_list)
+    }
+
+    private fun initData() {
     }
 
     private fun setupRecyclerView(recyclerView: RecyclerView) {
